@@ -10,7 +10,7 @@ import Anthropic from '@anthropic-ai/sdk';
 import AgentKeepAlive from 'agentkeepalive';
 import rateLimit from 'express-rate-limit';
 import fileTypePkg from 'file-type';
-const { fileTypeFromFile } = fileTypePkg;
+const { fromFile: fileTypeFromFile } = fileTypePkg;
 import 'dotenv/config';
 import { buildSystemPrompt, buildUserPrompt, PORTFOLIO } from './knowledge/biosintex.js';
 import {
