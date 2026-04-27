@@ -52,7 +52,7 @@ const UPLOADS_DIR = IS_PROD
 mkdirSync(UPLOADS_DIR, { recursive: true });
 
 // ── Cloudflare R2 ──────────────────────────────────────────────────────────
-console.log(`R2 env check — ACCOUNT_ID:${!!process.env.CLOUDFLARE_ACCOUNT_ID} ACCESS_KEY:${!!process.env.R2_ACCESS_KEY_ID} SECRET:${!!process.env.R2_SECRET_ACCESS_KEY} BUCKET:${process.env.R2_BUCKET_NAME || 'FALTA'}`)
+
 
 const USE_R2 = !!(
   process.env.CLOUDFLARE_ACCOUNT_ID &&
