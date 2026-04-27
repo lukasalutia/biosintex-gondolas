@@ -33,7 +33,8 @@ function AnalisisCard({ item, canDelete, onDelete }) {
     if (!window.confirm(`¿Borrar el análisis de ${item.farmacia}?`)) return;
     setDeleting(true);
     try {
-      await fetch(`/api/analisis/${item.id}`, { method: 'DELETE' });
+      const res = await fetch(`/api/analisis/${item.id}`, { method: 'DELETE' });
+      if (!res.ok) throw new Error('Error al borrar');
       onDelete(item.id);
     } catch {
       alert('Error al borrar el análisis');

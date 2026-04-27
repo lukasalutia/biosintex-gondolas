@@ -156,17 +156,22 @@ export default function NuevaVisita({ user }) {
     const files = Array.from(e.target.files);
     if (!files.length) return;
     const nuevas = [...fotos, ...files].slice(0, MAX_FOTOS);
+    // Revocar solo las URLs de las fotos que se reemplazan (las que no están en nuevas)
+    previews.slice(nuevas.length).forEach(url => URL.revokeObjectURL(url));
     setFotos(nuevas);
-    setPreviews(nuevas.map(f => URL.createObjectURL(f)));
+    setPreviews(prev => [
+      ...prev.slice(0, fotos.length), // URLs existentes que se conservan
+      ...nuevas.slice(fotos.length).map(f => URL.createObjectURL(f)), // solo las nuevas
+    ]);
     setResultado(null);
     setError('');
     if (fileRef.current) fileRef.current.value = '';
   };
 
   const removeFoto = (idx) => {
-    const nuevas = fotos.filter((_, i) => i !== idx);
-    setFotos(nuevas);
-    setPreviews(nuevas.map(f => URL.createObjectURL(f)));
+    URL.revokeObjectURL(previews[idx]);
+    setFotos(prev => prev.filter((_, i) => i !== idx));
+    setPreviews(prev => prev.filter((_, i) => i !== idx));
   };
 
   const handleSubmit = async (e) => {

@@ -23,7 +23,7 @@ function ChipToggle({ label, selected, onToggle }) {
   );
 }
 
-function FilterScreen({ onGenerar }) {
+function FilterScreen({ onGenerar, generarError }) {
   const [vendedores, setVendedores]       = useState([]);
   const [farmacias, setFarmacias]         = useState([]);
   const [selVendedores, setSelVendedores] = useState(new Set());
@@ -97,7 +97,9 @@ function FilterScreen({ onGenerar }) {
         <p className="text-xs text-gray-400 mt-1">Seleccioná qué datos incluir en el análisis</p>
       </div>
 
-      {error && <div className="bg-red-50 text-red-600 text-sm p-3 rounded-xl">{error}</div>}
+      {(error || generarError) && (
+        <div className="bg-red-50 text-red-600 text-sm p-3 rounded-xl">{error || generarError}</div>
+      )}
 
       {/* Filtro vendedores */}
       {vendedores.length > 0 && (
@@ -238,7 +240,7 @@ export default function AnalisisOrg() {
     }
   };
 
-  if (fase === 'filtros') return <FilterScreen onGenerar={generar} error={error} />;
+  if (fase === 'filtros') return <FilterScreen onGenerar={generar} generarError={error} />;
 
   if (fase === 'cargando') return (
     <div className="p-8 flex flex-col items-center justify-center gap-4 min-h-64">

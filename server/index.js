@@ -420,7 +420,7 @@ app.get('/api/historial-vendedor/:userId', async (req, res) => {
   }
 });
 
-app.post('/api/analisis-org', async (req, res) => {
+app.post('/api/analisis-org', analisisLimiter, async (req, res) => {
   try {
     const { vendedores, farmacias, fechaDesde, fechaHasta } = req.body || {};
     const allAnalisis = await getAnalisisByFilter({ vendedores, farmacias, fechaDesde, fechaHasta });
