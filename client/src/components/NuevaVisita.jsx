@@ -219,8 +219,8 @@ export default function NuevaVisita({ user }) {
                 onChange={e => setVendedorAsignado(e.target.value)}
                 className="w-full px-4 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-teal-500 bg-white"
               >
-                <option value="">— Carga propia de Eduardo —</option>
-                {vendedores.map(v => (
+                <option value="">— Carga propia ({user.nombre}) —</option>
+                {vendedores.filter(v => v.id !== user.id).map(v => (
                   <option key={v.id} value={v.nombre}>{v.nombre}</option>
                 ))}
               </select>

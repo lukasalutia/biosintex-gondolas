@@ -80,7 +80,7 @@ export async function createUser(user) {
 
 export async function getVendedores() {
   const { rows } = await pool.query(
-    "SELECT * FROM users WHERE puesto = 'Vendedor' ORDER BY nombre"
+    'SELECT * FROM users ORDER BY nombre'
   );
   return rows.map(r => ({ id: r.id, nombre: r.nombre, puesto: r.puesto, creadoEn: r.creado_en }));
 }
