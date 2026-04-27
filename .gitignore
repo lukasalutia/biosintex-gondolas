@@ -1,0 +1,24 @@
+# Env
+.env
+*.env
+.env.example
+
+# Archivos de proyecto
+*.pdf
+*.xlsx
+
+# Dependencies
+node_modules/
+
+# Uploads (fotos de farmacias)
+server/uploads/
+
+# DB local
+server/data/db.json
+server/data/last_raw.txt
+
+# Build
+client/dist/
+
+# OS
+.DS_Store
