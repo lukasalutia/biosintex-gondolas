@@ -214,9 +214,13 @@ app.post('/api/analisis', analisisLimiter, upload.array('fotos', 3), async (req,
   if (!req.files || req.files.length === 0)
     return res.status(400).json({ error: 'Al menos una foto es requerida' });
 
+  console.log('[analisis] archivos recibidos:', req.files.length);
+
   try {
     await validateImageFiles(req.files);
+    console.log('[analisis] validación de imágenes OK');
   } catch (err) {
+    console.error('[analisis] validateImageFiles error:', err.message);
     return res.status(400).json({ error: err.message });
   }
 
@@ -244,8 +248,12 @@ app.post('/api/analisis', analisisLimiter, upload.array('fotos', 3), async (req,
   let historialPrevio = [];
   try {
     historialPrevio = (await getAnalisisByFarmacia(farmacia)).slice(0, 3);
-  } catch {}
+    console.log('[analisis] historial previo OK:', historialPrevio.length);
+  } catch (err) {
+    console.error('[analisis] historial error:', err.message);
+  }
 
+  console.log('[analisis] llamando a Claude...');
   try {
     const message = await claude.messages.create({
       model: 'claude-sonnet-4-6',
@@ -289,8 +297,8 @@ app.post('/api/analisis', analisisLimiter, upload.array('fotos', 3), async (req,
     res.json(registro);
 
   } catch (err) {
-    console.error('Error en análisis:', err.message);
-    res.status(500).json({ error: IS_PROD ? 'Error interno del servidor' : err.message });
+    console.error('[analisis] ERROR COMPLETO:', err);
+    res.status(500).json({ error: err.message });
   }
 });
 
