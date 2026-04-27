@@ -17,8 +17,8 @@ server/uploads/
 server/data/db.json
 server/data/last_raw.txt
 
-# Build
-client/dist/
+# Build (no ignorar dist — Railway lo necesita pre-buildeado)
+# client/dist/
 
 # OS
 .DS_Store
