@@ -9,7 +9,7 @@ import { randomUUID } from 'crypto';
 import Anthropic from '@anthropic-ai/sdk';
 import AgentKeepAlive from 'agentkeepalive';
 import rateLimit from 'express-rate-limit';
-import fileType from 'file-type';
+import { fileTypeFromFile } from 'file-type';
 import 'dotenv/config';
 import { buildSystemPrompt, buildUserPrompt, PORTFOLIO } from './knowledge/biosintex.js';
 import {
@@ -118,7 +118,7 @@ const upload = multer({
 
 async function validateImageFiles(files) {
   for (const file of files) {
-    const type = await fileType.fromFile(file.path);
+    const type = await fileTypeFromFile(file.path);
     if (!type || !ALLOWED_MIMETYPES.has(type.mime)) {
       unlinkSync(file.path);
       throw new Error(`El archivo "${file.originalname}" no es una imagen válida.`);
