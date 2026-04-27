@@ -53,8 +53,16 @@ mkdirSync(UPLOADS_DIR, { recursive: true });
 // ── App ────────────────────────────────────────────────────────────────────
 const app = express();
 
+// Archivos estáticos PRIMERO — antes de cualquier middleware que pueda interferir
+const clientDist = join(__dirname, '..', 'client', 'dist');
+console.log('CLIENT_DIST:', clientDist, '| EXISTS:', existsSync(clientDist));
+if (existsSync(clientDist)) {
+  app.use(express.static(clientDist));
+}
+
 app.use(helmet({
   crossOriginResourcePolicy: { policy: 'same-site' },
+  contentSecurityPolicy: false, // Desactivado: el frontend ya tiene sus propios assets locales
 }));
 
 const allowedOrigins = (process.env.ALLOWED_ORIGINS || 'http://localhost:5173,http://localhost:4173')
@@ -414,10 +422,8 @@ Devolvé ÚNICAMENTE un JSON válido con esta estructura:
   }
 });
 
-// ── Frontend estático ──────────────────────────────────────────────────────
-const clientDist = join(__dirname, '..', 'client', 'dist');
+// SPA fallback — todas las rutas no-API sirven el index.html
 if (existsSync(clientDist)) {
-  app.use(express.static(clientDist));
   app.get('*', (req, res) => res.sendFile(join(clientDist, 'index.html')));
 } else {
   console.warn('client/dist no encontrado — frontend no servido');
