@@ -5,7 +5,7 @@ import multer from 'multer';
 import { readFileSync, mkdirSync, unlinkSync, existsSync } from 'fs';
 import { fileURLToPath } from 'url';
 import { dirname, join } from 'path';
-import { randomUUID } from 'crypto';
+import { randomUUID, createHmac, timingSafeEqual } from 'crypto';
 import Anthropic from '@anthropic-ai/sdk';
 import rateLimit from 'express-rate-limit';
 import fileTypePkg from 'file-type';
@@ -216,11 +216,65 @@ function isValidId(id) {
   return typeof id === 'string' && /^[\w-]{1,64}$/.test(id);
 }
 
+// ── Token auth (HMAC-SHA256, stateless) ────────────────────────────────────
+const TOKEN_SECRET = process.env.JWT_SECRET || (() => {
+  const s = randomUUID();
+  console.warn('⚠️  JWT_SECRET no definido — los tokens expiran al reiniciar. Agregá JWT_SECRET en Railway.');
+  return s;
+})();
+
+function issueToken(payload) {
+  const data = Buffer.from(JSON.stringify(payload)).toString('base64url');
+  const sig  = createHmac('sha256', TOKEN_SECRET).update(data).digest('base64url');
+  return `${data}.${sig}`;
+}
+
+function verifyToken(token) {
+  if (!token || typeof token !== 'string') return null;
+  const dot  = token.lastIndexOf('.');
+  if (dot === -1) return null;
+  const data = token.slice(0, dot);
+  const sig  = token.slice(dot + 1);
+  try {
+    const expected = createHmac('sha256', TOKEN_SECRET).update(data).digest('base64url');
+    const sigBuf   = Buffer.from(sig, 'base64url');
+    const expBuf   = Buffer.from(expected, 'base64url');
+    if (sigBuf.length !== expBuf.length || !timingSafeEqual(sigBuf, expBuf)) return null;
+    return JSON.parse(Buffer.from(data, 'base64url').toString());
+  } catch { return null; }
+}
+
 // ── Usuarios autorizados ───────────────────────────────────────────────────
-const USUARIOS_AUTORIZADOS = {
-  'eduardo bologna': 'Gerente',
-};
-const PASSWORD = process.env.APP_PASSWORD || 'Ofar';
+let USER_MAP;
+if (process.env.USERS_JSON) {
+  try {
+    const users = JSON.parse(process.env.USERS_JSON);
+    USER_MAP = new Map(users.map(u => [u.nombre.toLowerCase(), { password: u.password, puesto: u.puesto }]));
+    console.log(`✅ ${users.length} usuario${users.length !== 1 ? 's' : ''} cargado${users.length !== 1 ? 's' : ''} desde USERS_JSON`);
+  } catch {
+    console.error('FATAL: USERS_JSON no es JSON válido');
+    process.exit(1);
+  }
+} else {
+  USER_MAP = new Map([
+    ['eduardo bologna', { password: process.env.APP_PASSWORD || 'Ofar', puesto: 'Gerente' }],
+  ]);
+  console.warn('⚠️  USERS_JSON no definido — solo Eduardo Bologna puede ingresar.');
+}
+
+// ── Middleware de autenticación ────────────────────────────────────────────
+function requireAuth(req, res, next) {
+  const token   = req.headers.authorization?.replace('Bearer ', '');
+  const payload = verifyToken(token);
+  if (!payload) return res.status(401).json({ error: 'No autenticado' });
+  req.session = payload;
+  next();
+}
+
+function requireGerente(req, res, next) {
+  if (req.session?.puesto !== 'Gerente') return res.status(403).json({ error: 'Sin permisos' });
+  next();
+}
 
 // ── Rutas ──────────────────────────────────────────────────────────────────
 
@@ -233,31 +287,26 @@ app.post('/api/login', loginLimiter, async (req, res) => {
   if (!nombre || !password)
     return res.status(400).json({ error: 'Nombre y contraseña requeridos' });
 
-  const passMatch = password.length === PASSWORD.length &&
-    password.split('').every((c, i) => c === PASSWORD[i]);
-
-  if (!passMatch)
-    return res.status(401).json({ error: 'Credenciales incorrectas' });
-
   const nombreNorm = nombre.toLowerCase();
-  const puesto = USUARIOS_AUTORIZADOS[nombreNorm];
-  if (!puesto)
+  const userConfig = USER_MAP.get(nombreNorm);
+  if (!userConfig || userConfig.password !== password)
     return res.status(401).json({ error: 'Credenciales incorrectas' });
 
   try {
     let user = await findUserByNombre(nombreNorm);
     if (!user) {
-      user = { id: randomUUID(), nombre, puesto, creadoEn: new Date().toISOString() };
+      user = { id: randomUUID(), nombre, puesto: userConfig.puesto, creadoEn: new Date().toISOString() };
       await createUser(user);
     }
-    res.json(user);
+    const sessionToken = issueToken({ userId: user.id, puesto: userConfig.puesto });
+    res.json({ ...user, sessionToken });
   } catch (err) {
     console.error('Login DB error:', err.message);
     res.status(500).json({ error: 'Error interno del servidor' });
   }
 });
 
-app.delete('/api/analisis/:id', async (req, res) => {
+app.delete('/api/analisis/:id', requireAuth, async (req, res) => {
   if (!isValidId(req.params.id))
     return res.status(400).json({ error: 'ID inválido' });
 
@@ -277,7 +326,7 @@ app.delete('/api/analisis/:id', async (req, res) => {
   }
 });
 
-app.post('/api/analisis', analisisLimiter, upload.array('fotos', 3), async (req, res) => {
+app.post('/api/analisis', analisisLimiter, requireAuth, upload.array('fotos', 3), async (req, res) => {
   if (!req.files || req.files.length === 0)
     return res.status(400).json({ error: 'Al menos una foto es requerida' });
 
@@ -369,7 +418,7 @@ app.post('/api/analisis', analisisLimiter, upload.array('fotos', 3), async (req,
   }
 });
 
-app.get('/api/historial/:userId', async (req, res) => {
+app.get('/api/historial/:userId', requireAuth, async (req, res) => {
   if (!isValidId(req.params.userId))
     return res.status(400).json({ error: 'ID inválido' });
 
@@ -382,7 +431,7 @@ app.get('/api/historial/:userId', async (req, res) => {
   }
 });
 
-app.get('/api/vendedores', async (req, res) => {
+app.get('/api/vendedores', requireAuth, async (req, res) => {
   try {
     const result = await getVendedoresConStats();
     res.json(result);
@@ -392,7 +441,7 @@ app.get('/api/vendedores', async (req, res) => {
   }
 });
 
-app.get('/api/farmacias', async (req, res) => {
+app.get('/api/farmacias', requireAuth, async (req, res) => {
   try {
     const farmacias = await getFarmacias();
     res.json(farmacias);
@@ -402,7 +451,7 @@ app.get('/api/farmacias', async (req, res) => {
   }
 });
 
-app.get('/api/historial-vendedor/:userId', async (req, res) => {
+app.get('/api/historial-vendedor/:userId', requireAuth, requireGerente, async (req, res) => {
   if (!isValidId(req.params.userId))
     return res.status(400).json({ error: 'ID inválido' });
 
@@ -420,7 +469,7 @@ app.get('/api/historial-vendedor/:userId', async (req, res) => {
   }
 });
 
-app.post('/api/analisis-org', analisisLimiter, async (req, res) => {
+app.post('/api/analisis-org', analisisLimiter, requireAuth, requireGerente, async (req, res) => {
   try {
     const { vendedores, farmacias, fechaDesde, fechaHasta } = req.body || {};
     const allAnalisis = await getAnalisisByFilter({ vendedores, farmacias, fechaDesde, fechaHasta });
