@@ -7,7 +7,6 @@ import { fileURLToPath } from 'url';
 import { dirname, join } from 'path';
 import { randomUUID } from 'crypto';
 import Anthropic from '@anthropic-ai/sdk';
-import AgentKeepAlive from 'agentkeepalive';
 import rateLimit from 'express-rate-limit';
 import fileTypePkg from 'file-type';
 const { fromFile: fileTypeFromFile } = fileTypePkg;
@@ -128,12 +127,7 @@ async function validateImageFiles(files) {
 }
 
 // ── Claude client ──────────────────────────────────────────────────────────
-const httpsAgent = new AgentKeepAlive.HttpsAgent({
-  keepAlive: true,
-  timeout: 5 * 60 * 1000,
-  freeSocketTimeout: 60 * 1000,
-});
-const claude = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY, httpAgent: httpsAgent });
+const claude = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
 const SYSTEM_PROMPT = buildSystemPrompt();
 
 function parseJson(text) {
