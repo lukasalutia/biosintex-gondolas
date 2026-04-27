@@ -2,7 +2,7 @@ import express from 'express';
 import cors from 'cors';
 import helmet from 'helmet';
 import multer from 'multer';
-import { readFileSync, mkdirSync, unlinkSync } from 'fs';
+import { readFileSync, mkdirSync, unlinkSync, existsSync } from 'fs';
 import { fileURLToPath } from 'url';
 import { dirname, join } from 'path';
 import { randomUUID } from 'crypto';
@@ -414,11 +414,13 @@ Devolvé ÚNICAMENTE un JSON válido con esta estructura:
   }
 });
 
-// ── Frontend estático (producción) ─────────────────────────────────────────
-if (IS_PROD) {
-  const clientDist = join(__dirname, '..', 'client', 'dist');
+// ── Frontend estático ──────────────────────────────────────────────────────
+const clientDist = join(__dirname, '..', 'client', 'dist');
+if (existsSync(clientDist)) {
   app.use(express.static(clientDist));
   app.get('*', (req, res) => res.sendFile(join(clientDist, 'index.html')));
+} else {
+  console.warn('client/dist no encontrado — frontend no servido');
 }
 
 // ── Manejador global de errores ────────────────────────────────────────────
