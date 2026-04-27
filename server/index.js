@@ -338,7 +338,7 @@ app.post('/api/analisis', analisisLimiter, requireAuth, upload.array('fotos', 5)
     return res.status(400).json({ error: err.message });
   }
 
-  const farmacia            = sanitizeStr(req.body.farmacia, 150);
+  const farmacia            = sanitizeStr(req.body.farmacia, 150).toUpperCase();
   const userId              = sanitizeStr(req.body.userId, 64);
   const userName            = sanitizeStr(req.body.userName, 100);
   const tipoTiendaDeclarado = ['A','B','C'].includes(req.body.tipoTiendaDeclarado)
