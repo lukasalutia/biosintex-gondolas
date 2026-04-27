@@ -282,7 +282,7 @@ function requireGerente(req, res, next) {
 
 app.get('/health', (req, res) => res.json({ status: 'ok' }));
 
-app.post('/api/login', loginLimiter, async (req, res) => {
+app.post('/api/login', async (req, res) => {
   const nombre   = sanitizeStr(req.body.nombre, 100);
   const password = sanitizeStr(req.body.password, 100);
 
