@@ -52,6 +52,7 @@ mkdirSync(UPLOADS_DIR, { recursive: true });
 
 // ── App ────────────────────────────────────────────────────────────────────
 const app = express();
+app.set('trust proxy', 1); // Railway usa proxy inverso
 
 // Archivos estáticos PRIMERO — antes de cualquier middleware que pueda interferir
 const clientDist = join(__dirname, '..', 'client', 'dist');
