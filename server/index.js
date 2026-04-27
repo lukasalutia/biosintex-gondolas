@@ -10,6 +10,7 @@ import Anthropic from '@anthropic-ai/sdk';
 import rateLimit from 'express-rate-limit';
 import fileTypePkg from 'file-type';
 const { fromFile: fileTypeFromFile } = fileTypePkg;
+import { S3Client, PutObjectCommand, DeleteObjectCommand, GetObjectCommand } from '@aws-sdk/client-s3';
 import 'dotenv/config';
 import { buildSystemPrompt, buildUserPrompt, PORTFOLIO } from './knowledge/biosintex.js';
 import {
@@ -50,6 +51,47 @@ const UPLOADS_DIR = IS_PROD
 
 mkdirSync(UPLOADS_DIR, { recursive: true });
 
+// ── Cloudflare R2 ──────────────────────────────────────────────────────────
+const USE_R2 = !!(
+  process.env.CLOUDFLARE_ACCOUNT_ID &&
+  process.env.R2_ACCESS_KEY_ID &&
+  process.env.R2_SECRET_ACCESS_KEY &&
+  process.env.R2_BUCKET_NAME
+);
+
+const r2 = USE_R2 ? new S3Client({
+  region: 'auto',
+  endpoint: `https://${process.env.CLOUDFLARE_ACCOUNT_ID}.r2.cloudflarestorage.com`,
+  credentials: {
+    accessKeyId: process.env.R2_ACCESS_KEY_ID,
+    secretAccessKey: process.env.R2_SECRET_ACCESS_KEY,
+  },
+}) : null;
+
+console.log(USE_R2 ? '✅ Cloudflare R2 habilitado' : '⚠️  R2 no configurado — usando almacenamiento local');
+
+async function storeFile(file) {
+  if (!USE_R2) return;
+  await r2.send(new PutObjectCommand({
+    Bucket: process.env.R2_BUCKET_NAME,
+    Key: file.filename,
+    Body: readFileSync(file.path),
+    ContentType: file.mimetype,
+  }));
+  try { unlinkSync(file.path); } catch {}
+}
+
+async function removeFile(filename) {
+  if (USE_R2) {
+    await r2.send(new DeleteObjectCommand({
+      Bucket: process.env.R2_BUCKET_NAME,
+      Key: filename,
+    }));
+  } else {
+    try { unlinkSync(join(UPLOADS_DIR, filename)); } catch {}
+  }
+}
+
 // ── App ────────────────────────────────────────────────────────────────────
 const app = express();
 app.set('trust proxy', 1); // Railway usa proxy inverso
@@ -79,7 +121,32 @@ app.use(cors({
 }));
 
 app.use(express.json({ limit: '50kb' }));
-app.use('/uploads', express.static(UPLOADS_DIR, { index: false }));
+
+app.get('/uploads/:filename', async (req, res) => {
+  const { filename } = req.params;
+  if (!/^[\w.-]{1,200}$/.test(filename)) return res.status(400).end();
+  if (USE_R2) {
+    try {
+      const obj = await r2.send(new GetObjectCommand({
+        Bucket: process.env.R2_BUCKET_NAME,
+        Key: filename,
+      }));
+      res.setHeader('Content-Type', obj.ContentType || 'image/jpeg');
+      res.setHeader('Cache-Control', 'public, max-age=31536000, immutable');
+      obj.Body.pipe(res);
+    } catch {
+      res.status(404).end();
+    }
+  } else {
+    const filePath = join(UPLOADS_DIR, filename);
+    if (existsSync(filePath)) {
+      res.setHeader('Cache-Control', 'public, max-age=31536000, immutable');
+      res.sendFile(filePath);
+    } else {
+      res.status(404).end();
+    }
+  }
+});
 
 // ── Rate limiters ──────────────────────────────────────────────────────────
 const analisisLimiter = rateLimit({
@@ -109,7 +176,7 @@ const upload = multer({
       cb(null, `${randomUUID()}${ext}`);
     },
   }),
-  limits: { fileSize: 10 * 1024 * 1024, files: 3 },
+  limits: { fileSize: 30 * 1024 * 1024, files: 3 },
   fileFilter: (req, file, cb) => {
     if (ALLOWED_MIMETYPES.has(file.mimetype)) return cb(null, true);
     cb(new Error('Tipo de archivo no permitido. Solo se aceptan imágenes JPG, PNG o WebP.'));
@@ -201,7 +268,7 @@ app.delete('/api/analisis/:id', async (req, res) => {
     const fotosABorrar = resultado.fotos?.length
       ? resultado.fotos
       : resultado.foto ? [resultado.foto] : [];
-    fotosABorrar.forEach(f => { try { unlinkSync(join(UPLOADS_DIR, f)); } catch {} });
+    await Promise.allSettled(fotosABorrar.map(f => removeFile(f)));
 
     res.json({ ok: true });
   } catch (err) {
@@ -239,6 +306,14 @@ app.post('/api/analisis', analisisLimiter, upload.array('fotos', 3), async (req,
       data: readFileSync(f.path).toString('base64'),
     },
   }));
+
+  // Subir fotos a R2 (o dejar en disco local si R2 no está configurado)
+  try {
+    await Promise.all(req.files.map(storeFile));
+  } catch (err) {
+    console.error('Error subiendo imágenes:', err.message);
+    return res.status(500).json({ error: 'Error guardando las imágenes' });
+  }
 
   // Contexto histórico de visitas previas a esta farmacia
   let historialPrevio = [];

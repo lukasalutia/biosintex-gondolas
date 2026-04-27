@@ -310,10 +310,10 @@ export default function NuevaVisita({ user }) {
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 4v16m8-8H4" />
                 </svg>
                 <p className="text-sm text-gray-400">{fotos.length === 0 ? 'Tocá para subir fotos' : 'Agregar otra foto'}</p>
-                <p className="text-xs text-gray-300 mt-0.5">Hasta {MAX_FOTOS} fotos · JPG, PNG · 10MB c/u</p>
+                <p className="text-xs text-gray-300 mt-0.5">Hasta {MAX_FOTOS} fotos · JPG, PNG, WebP · 30MB c/u</p>
               </div>
             )}
-            <input ref={fileRef} type="file" accept="image/*" multiple onChange={handleFotos} className="hidden" />
+            <input ref={fileRef} type="file" accept="image/jpeg,image/png,image/webp" multiple onChange={handleFotos} className="hidden" />
           </div>
 
           {error && <div className="bg-red-50 text-red-600 text-sm p-3 rounded-xl">{error}</div>}
