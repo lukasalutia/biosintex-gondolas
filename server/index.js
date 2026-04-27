@@ -178,7 +178,7 @@ const upload = multer({
       cb(null, `${randomUUID()}${ext}`);
     },
   }),
-  limits: { fileSize: 30 * 1024 * 1024, files: 3 },
+  limits: { fileSize: 30 * 1024 * 1024, files: 5 },
   fileFilter: (req, file, cb) => {
     if (ALLOWED_MIMETYPES.has(file.mimetype)) return cb(null, true);
     cb(new Error('Tipo de archivo no permitido. Solo se aceptan imágenes JPG, PNG o WebP.'));
@@ -328,7 +328,7 @@ app.delete('/api/analisis/:id', requireAuth, async (req, res) => {
   }
 });
 
-app.post('/api/analisis', analisisLimiter, requireAuth, upload.array('fotos', 3), async (req, res) => {
+app.post('/api/analisis', analisisLimiter, requireAuth, upload.array('fotos', 5), async (req, res) => {
   if (!req.files || req.files.length === 0)
     return res.status(400).json({ error: 'Al menos una foto es requerida' });
 
@@ -345,6 +345,10 @@ app.post('/api/analisis', analisisLimiter, requireAuth, upload.array('fotos', 3)
     ? req.body.tipoTiendaDeclarado : null;
   const notas               = sanitizeStr(req.body.notas, 500);
   const vendedorAsignado    = sanitizeStr(req.body.vendedorAsignado, 100);
+  const fechaInput          = sanitizeStr(req.body.fecha, 20);
+  const fecha               = fechaInput && /^\d{4}-\d{2}-\d{2}$/.test(fechaInput)
+    ? new Date(fechaInput + 'T12:00:00.000Z').toISOString()
+    : new Date().toISOString();
 
   if (!farmacia) return res.status(400).json({ error: 'Nombre de farmacia requerido' });
   if (!userId)   return res.status(400).json({ error: 'userId requerido' });
@@ -409,7 +413,7 @@ app.post('/api/analisis', analisisLimiter, requireAuth, upload.array('fotos', 3)
       foto:                fotos[0],
       fotos,
       analisis,
-      fecha:               new Date().toISOString(),
+      fecha,
     };
     await insertAnalisis(registro);
     res.json(registro);
