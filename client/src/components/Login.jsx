@@ -32,7 +32,7 @@ export default function Login({ onLogin }) {
     <div className="min-h-screen flex flex-col" style={{ background: 'linear-gradient(160deg, #04101F 0%, #023E8A 60%, #0077B6 100%)' }}>
       {/* Top branding area */}
       <div className="flex-1 flex flex-col items-center justify-center px-6 pt-16 pb-8">
-        <BiosintexLogo className="mb-3" />
+        <BiosintexLogo variant="full" className="mb-3 px-2" height={56} />
         <div className="mt-2 text-center">
           <p className="text-white/60 text-sm tracking-wide uppercase font-medium" style={{ letterSpacing: '0.12em' }}>
             Farmacia Perfecta

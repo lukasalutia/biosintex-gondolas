@@ -41,8 +41,8 @@ export default function GerenteView({ user, onLogout }) {
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col">
       <header className="sticky top-0 z-10" style={{ background: 'linear-gradient(135deg, #04101F, #023E8A)' }}>
-        <div className="px-4 py-3 flex items-center justify-between">
-          <BiosintexLogo />
+        <div className="px-4 py-3 flex items-center justify-between gap-2">
+          <BiosintexLogo variant="header" />
           <div className="flex items-center gap-3">
             <div className="text-right">
               <p className="text-white/90 text-xs font-medium">{user.nombre}</p>
