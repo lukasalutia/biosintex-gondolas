@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import FotoGondola from './FotoGondola';
 
 function ScoreBadge({ score }) {
   const color = score >= 8 ? 'bg-green-100 text-green-700' : score >= 5 ? 'bg-yellow-100 text-yellow-700' : 'bg-red-100 text-red-700';
@@ -46,9 +47,12 @@ function AnalisisCard({ item, canDelete, onDelete }) {
     <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
       <div className="p-4 flex items-center justify-between cursor-pointer" onClick={() => setExpanded(!expanded)}>
         <div className="flex items-center gap-3 min-w-0">
-          <div className="w-10 h-10 rounded-lg bg-gray-100 overflow-hidden flex-shrink-0">
-            <img src={`/uploads/${item.foto || item.fotos?.[0]}`} alt="" className="w-full h-full object-cover" />
-          </div>
+          <FotoGondola
+            src={`/uploads/${item.foto || item.fotos?.[0]}`}
+            alt=""
+            className="w-10 h-10 rounded-lg flex-shrink-0"
+            size="xs"
+          />
           <div className="min-w-0">
             <p className="text-xs text-gray-400">{formatFecha(item.fecha)}</p>
             <div className="flex flex-wrap gap-1 mt-0.5">
@@ -80,7 +84,14 @@ function AnalisisCard({ item, canDelete, onDelete }) {
       {expanded && (
         <div className="border-t border-gray-100 p-4 space-y-3">
           {(item.fotos || [item.foto]).filter(Boolean).map((f, i) => (
-            <img key={i} src={`/uploads/${f}`} alt={`Góndola ${i+1}`} className="w-full rounded-xl object-cover max-h-48" />
+            <FotoGondola
+              key={i}
+              src={`/uploads/${f}`}
+              alt={`Góndola ${i+1}`}
+              className="w-full rounded-xl max-h-48"
+              imgClassName="w-full rounded-xl object-cover max-h-48"
+              size="md"
+            />
           ))}
 
           {item.vendedorAsignado && (

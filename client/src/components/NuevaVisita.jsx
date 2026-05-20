@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
+import FotoGondola from './FotoGondola';
 
 function ScoreCircle({ score }) {
   const color = score >= 8 ? 'text-green-600' : score >= 5 ? 'text-yellow-600' : 'text-red-600';
@@ -309,7 +310,7 @@ export default function NuevaVisita({ user }) {
               <div className="grid grid-cols-3 gap-2 mb-2">
                 {previews.map((p, i) => (
                   <div key={i} className="relative">
-                    <img src={p} alt={`Foto ${i+1}`} className="w-full h-24 object-cover rounded-xl" />
+                    <FotoGondola src={p} alt={`Foto ${i+1}`} className="w-full h-24 rounded-xl" imgClassName="w-full h-24 object-cover rounded-xl" size="sm" />
                     <button
                       type="button"
                       onClick={() => removeFoto(i)}
