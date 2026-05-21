@@ -4,7 +4,7 @@
  */
 export default function BiosintexLogo({ className = '', variant = 'full', height }) {
   const isHeader = variant === 'header';
-  const src = isHeader ? '/biosintex-isologo.png' : '/biosintex-logo.png';
+  const src = isHeader ? '/biosintex-isologo.png?v=2' : '/biosintex-logo.png?v=2';
   const h = height ?? (isHeader ? 34 : 52);
 
   return (

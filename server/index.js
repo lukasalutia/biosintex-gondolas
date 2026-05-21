@@ -102,7 +102,15 @@ app.set('trust proxy', 1); // Railway usa proxy inverso
 const clientDist = join(__dirname, '..', 'client', 'dist');
 console.log('CLIENT_DIST:', clientDist, '| EXISTS:', existsSync(clientDist));
 if (existsSync(clientDist)) {
-  app.use(express.static(clientDist));
+  app.use(express.static(clientDist, {
+    setHeaders(res, filePath) {
+      if (filePath.endsWith('.html')) {
+        res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
+      } else if (/biosintex-(logo|isologo)\.png$/.test(filePath)) {
+        res.setHeader('Cache-Control', 'no-cache, must-revalidate');
+      }
+    },
+  }));
 }
 
 app.use(helmet({

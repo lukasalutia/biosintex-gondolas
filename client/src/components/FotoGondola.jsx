@@ -14,7 +14,7 @@ export default function FotoGondola({
     <div className={`relative overflow-hidden ${className}`}>
       <img src={src} alt={alt} className={imgClassName} />
       <img
-        src="/biosintex-isologo.png"
+        src="/biosintex-isologo.png?v=2"
         alt=""
         aria-hidden="true"
         className="absolute bottom-1 right-1 pointer-events-none drop-shadow-md"
