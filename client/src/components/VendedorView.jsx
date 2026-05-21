@@ -23,9 +23,11 @@ export default function VendedorView({ user, onLogout }) {
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col">
       <header className="sticky top-0 z-10" style={{ background: 'linear-gradient(135deg, #04101F, #023E8A)' }}>
-        <div className="px-4 py-3 flex items-center justify-between gap-2">
-          <BiosintexLogo variant="header" />
-          <div className="flex items-center gap-3">
+        <div className="px-4 py-3 flex items-center justify-between gap-2 min-w-0">
+          <div className="shrink-0 overflow-visible">
+            <BiosintexLogo variant="header" />
+          </div>
+          <div className="flex items-center gap-3 min-w-0 shrink">
             <div className="text-right">
               <p className="text-white/90 text-xs font-medium">{user.nombre}</p>
               <p className="text-white/50 text-xs">Vendedor</p>

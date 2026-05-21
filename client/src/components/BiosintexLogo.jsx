@@ -4,18 +4,18 @@
  */
 export default function BiosintexLogo({ className = '', variant = 'full', height }) {
   const isHeader = variant === 'header';
-  const src = isHeader ? '/biosintex-isologo.png?v=2' : '/biosintex-logo.png?v=2';
-  const h = height ?? (isHeader ? 34 : 52);
+  const src = isHeader ? '/biosintex-isologo.png?v=3' : '/biosintex-logo.png?v=2';
+  const h = height ?? (isHeader ? 36 : 52);
 
   return (
     <div
-      className={`flex shrink-0 items-center justify-center overflow-visible ${isHeader ? '' : 'w-full'} ${className}`}
+      className={`flex shrink-0 items-center justify-center overflow-visible ${isHeader ? 'pr-1' : 'w-full'} ${className}`}
     >
       <img
         src={src}
         alt="Biosintex — Siempre en tu farmacia"
-        className="block object-contain object-center max-w-full"
-        style={{ height: h, width: 'auto' }}
+        className={`block object-contain object-left ${isHeader ? '' : 'max-w-full mx-auto'}`}
+        style={{ height: h, width: 'auto', maxWidth: isHeader ? 'none' : '100%' }}
         draggable={false}
       />
     </div>
